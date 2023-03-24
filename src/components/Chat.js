@@ -1,38 +1,74 @@
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Alert } from "./Alert";
+import React, {Component} from "react";
+import { ref, set, onValue} from "firebase/database";
+import { db } from "../firebase";
 
-export function Chat ()
-{
-    const {user, logout, loading} = useAuth();
-    const navigate = useNavigate();
-    const [error, setError] = useState("");
-    //console.log(user);
+class Chat extends Component {
 
-    const handleLogOut = async () => {
-        try{
-            await logout();
-            navigate("/");
-        }catch(e){
-            //console.error(e);
-            setError(e);
+    constructor() {
+        super(); //con esto heredas todo lo que tiene la clase Component
+        this.state = {
+            message: '', //alamacena el mensaje del input
+            messages: [
+                {id:0, text:'text1'},
+                {id:1, text:'text2'},
+                {id:2, text:'text3'}
+            ]
         }
-    };
+    }
 
-    if(loading) return <h1>loading</h1>
+    updateMessage(e){
+        //console.log(e.target.value);
+        this.setState({message: e.target.value});
+    }
+   
+    componentDidMount() {
+        //Conección con Firebase
+        const messageRef = ref(db, 'messages/');
+        onValue(messageRef, (snapshot) => {
+            const data = snapshot.val();
+            this.setState({
+                messages: data
+            });
+          });
+    }
 
-    return(
-        <div>
-            {error && <Alert message={error}/>}
-            <div class="topbar">
-                <h1>Walrus Code Chat</h1>
-                <p>Welcome, {user.displayName}!</p>
-                <button onClick={handleLogOut}>LOG OUT</button>
+    handleSubmit(e){
+        e.preventDefault();
+        const list = this.state.messages;
+        const newMessage = {
+            id: this.state.messages.length,
+            text: this.state.message
+        };
+        console.log(newMessage);
+        list.push(newMessage);
+
+        set(ref(db, `messages/${newMessage.id}`), newMessage);
+        this.setState({message: ''});
+        this.setState({messages: list})
+    }
+
+    render() {
+
+        const { messages } = this.state;
+        const messagesList = messages.map(message => {
+            return <li key={message.id}>{message.text}</li>
+        })
+
+        return(
+            <div>
+                <ul>
+                    {messagesList}
+                </ul>
+
+                <form onSubmit={this.handleSubmit.bind(this)}>
+                    <input type="text" value={this.state.message} onChange={this.updateMessage.bind(this)}/>
+                    <button>
+                        Send
+                    </button>
+                </form>
             </div>
-            <div class="chat">
-
-            </div>
-        </div>
         );
+    }
 }
+
+export default Chat;
