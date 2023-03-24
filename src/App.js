@@ -4,7 +4,12 @@ import logo from './logo.svg';
 import './App.css';
 import { Login } from './components/Login';
 import { Chat } from './components/Chat';
+
+
+
+
 function App() {
+
   return(
     <div className="bg-slate-300 h-screen text-white flex">
       <img height="200px" alt="LOGO" src={logo}/>
